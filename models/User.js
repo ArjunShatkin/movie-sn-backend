@@ -20,20 +20,40 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['casual', 'reviewer'],
-    default: 'casual'
+    enum: ['reviewer', 'casual'],
+    default: 'casual',
+    required: true
   },
+  // Reviewer-specific fields
   bio: {
     type: String,
     default: ''
   },
-  favoriteMovies: [{
-    type: Number  // TMDB movie IDs
-  }],
-  createdAt: {
+  expertise: {
+    type: [String], // e.g., ['Action', 'Sci-Fi', 'Horror']
+    default: []
+  },
+  // Casual user fields
+  favoriteGenre: {
+    type: String,
+    default: ''
+  },
+  // Common fields
+  profilePicture: {
+    type: String,
+    default: ''
+  },
+  joinedDate: {
     type: Date,
     default: Date.now
+  },
+  // Privacy settings
+  emailPublic: {
+    type: Boolean,
+    default: false
   }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('User', userSchema);
