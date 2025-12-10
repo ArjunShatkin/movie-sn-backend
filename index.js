@@ -7,12 +7,33 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS Configuration
+// CORS Configuration - Allow all Vercel deployments
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://movie-sn-frontend.vercel.app', 'https://movie-sn-frontend-arjunshatkin.vercel.app']
-    : 'http://localhost:5173',
-  credentials: true
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'https://movie-sn-frontend.vercel.app',
+      'https://movie-sn-frontend-arjunshatkin.vercel.app'
+    ];
+    
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    // Allow all vercel.app domains
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['set-cookie']
 }));
 
 // Middleware
@@ -24,11 +45,13 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'movie-social-network-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
+  proxy: true, // Trust proxy for production
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
   }
 }));
 
@@ -82,7 +105,8 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     uptime: process.uptime(),
-    session: req.session ? 'enabled' : 'disabled'
+    session: req.session ? 'enabled' : 'disabled',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
